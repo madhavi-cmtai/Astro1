@@ -42,8 +42,6 @@ export async function POST(req: NextRequest) {
             status: "New", // default status
         };
 
-        console.log("Saving data to Firestore:", data);
-
         const docRef = await db.collection("contactMessages").add(data);
 
         // 🔧 Changed response shape to include { success: true, data: {...} }

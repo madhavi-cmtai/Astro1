@@ -4,13 +4,10 @@ import LeadService from "../../services/leadServices";
 // GET /api/routes/leads
 export async function GET(req: Request) {
   try {
-    console.log('GET /api/routes/leads - Starting request');
-
     // Get search params
     const { searchParams } = new URL(req.url);
     const forceRefresh = searchParams.get('refresh') === 'true';
     
-    console.log('Fetching leads with forceRefresh:', forceRefresh);
     const leads = await LeadService.getAllLeads(forceRefresh);
     
     if (!Array.isArray(leads)) {

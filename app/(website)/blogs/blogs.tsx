@@ -39,7 +39,6 @@ export default function BlogList() {
 
         setBlogs(normalizedBlogs);
       } catch (error) {
-        console.error("Error fetching blogs:", error);
         setError("Failed to load blogs. Please try again later.");
         toast.error("Failed to load blogs");
       } finally {
@@ -62,7 +61,6 @@ export default function BlogList() {
 
         setPopularPosts(latest);
       } catch (error) {
-        console.error("Error loading popular posts", error);
         toast.error("Failed to load popular posts");
       }
     };

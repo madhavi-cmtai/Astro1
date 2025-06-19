@@ -65,9 +65,9 @@ class TestimonialService {
                 etag: `v1-${Date.now()}`
             };
 
-            consoleManager.log(`✅ Cache refreshed with ${allTestimonials.length} testimonials`);
+            consoleManager.log(`Cache refreshed with ${allTestimonials.length} testimonials`);
         } catch (error) {
-            consoleManager.error("❌ Error refreshing cache:", error);
+            consoleManager.error("Error refreshing cache:", error);
             throw new Error("Failed to refresh testimonials cache");
         }
     }
@@ -79,7 +79,7 @@ class TestimonialService {
             }
             return this.cache?.data || [];
         } catch (error) {
-            consoleManager.error("❌ Error getting all testimonials:", error);
+            consoleManager.error("Error getting all testimonials:", error);
             throw new Error("Failed to fetch testimonials");
         }
     }
@@ -110,10 +110,10 @@ class TestimonialService {
                 etag: `v1-${Date.now()}`
             };
 
-            consoleManager.log("✅ Active testimonials fetched from Firestore. Count:", activeTestimonials.length);
+            consoleManager.log("Active testimonials fetched from Firestore. Count:", activeTestimonials.length);
             return activeTestimonials;
         } catch (error) {
-            consoleManager.error("❌ Error getting active testimonials:", error);
+            consoleManager.error("Error getting active testimonials:", error);
             throw new Error("Failed to fetch active testimonials");
         }
     }
@@ -130,13 +130,13 @@ class TestimonialService {
                 updatedOn: timestamp,
             });
 
-            consoleManager.log("✅ New testimonial added with ID:", newTestimonialRef.id);
+            consoleManager.log("New testimonial added with ID:", newTestimonialRef.id);
 
             await this.getAllTestimonials(true);
 
             return { id: newTestimonialRef.id, ...testimonialData, mediaType, createdOn: timestamp };
         } catch (error) {
-            consoleManager.error("❌ Error adding testimonial:", error);
+            consoleManager.error("Error adding testimonial:", error);
             throw new Error("Failed to add testimonial");
         }
     }
@@ -146,7 +146,7 @@ class TestimonialService {
             if (!forceFirestore && this.cache && !this.isCacheStale()) {
                 const cachedTestimonial = this.cache.data.find(t => t.id === testimonialId);
                 if (cachedTestimonial) {
-                    consoleManager.log("✅ Testimonial fetched from cache:", testimonialId);
+                    consoleManager.log("Testimonial fetched from cache:", testimonialId);
                     return cachedTestimonial;
                 }
             }
@@ -155,7 +155,7 @@ class TestimonialService {
             const doc = await testimonialRef.get();
 
             if (!doc.exists) {
-                consoleManager.warn("⚠️ Testimonial not found:", testimonialId);
+                consoleManager.warn("Testimonial not found:", testimonialId);
                 return null;
             }
 
@@ -167,10 +167,10 @@ class TestimonialService {
                 );
             }
 
-            consoleManager.log("✅ Testimonial fetched from Firestore:", testimonialId);
+            consoleManager.log("Testimonial fetched from Firestore:", testimonialId);
             return testimonial;
         } catch (error) {
-            consoleManager.error("❌ Error fetching testimonial by ID:", error);
+            consoleManager.error("Error fetching testimonial by ID:", error);
             throw new Error("Failed to fetch testimonial");
         }
     }
@@ -190,13 +190,13 @@ class TestimonialService {
                 updatedOn: timestamp,
             });
 
-            consoleManager.log("✅ Testimonial updated:", testimonialId);
+            consoleManager.log("Testimonial updated:", testimonialId);
 
             await this.getAllTestimonials(true);
 
             return { id: testimonialId, ...updatedData, updatedOn: timestamp };
         } catch (error) {
-            consoleManager.error("❌ Error updating testimonial:", error);
+            consoleManager.error("Error updating testimonial:", error);
             throw new Error("Failed to update testimonial");
         }
     }
@@ -204,13 +204,13 @@ class TestimonialService {
     static async deleteTestimonial(testimonialId: string) {
         try {
             await db.collection("testimonials").doc(testimonialId).delete();
-            consoleManager.log("✅ Testimonial deleted:", testimonialId);
+            consoleManager.log("Testimonial deleted:", testimonialId);
 
             await this.getAllTestimonials(true);
 
             return { success: true, message: "Testimonial deleted successfully" };
         } catch (error) {
-            consoleManager.error("❌ Error deleting testimonial:", error);
+            consoleManager.error("Error deleting testimonial:", error);
             throw new Error("Failed to delete testimonial");
         }
     }

@@ -65,7 +65,6 @@ const ReplaceImage = async (file: any, oldImageUrl: string, width: number, heigh
 
     if (oldImageUrl) {
       try {
-        console.log("Old Image URL:", oldImageUrl);
         let oldFilePath;
         if (oldImageUrl.includes("/o/")) {
           oldFilePath = oldImageUrl.split("/o/")[1].split("?")[0];
@@ -78,9 +77,7 @@ const ReplaceImage = async (file: any, oldImageUrl: string, width: number, heigh
 
         const decodedOldFilePath = decodeURIComponent(oldFilePath);
         await bucket.file(decodedOldFilePath).delete();
-        console.log("Old image deleted:", decodedOldFilePath);
       } catch (deleteError: any) {
-        console.warn("Failed to delete old image:", deleteError.message);
         throw new Error("Failed to delete old image: " + deleteError.message);
       }
     }
@@ -113,7 +110,6 @@ const DeleteImage = async (imageUrl: string) => {
 
     const decodedFilePath = decodeURIComponent(filePath);
     await bucket.file(decodedFilePath).delete();
-    console.log("Deleted image from Firebase Storage:", decodedFilePath);
   } catch (error: any) {
     console.warn("Failed to delete image from Firebase:", error.message);
     throw new Error("Image deletion error: " + error.message);

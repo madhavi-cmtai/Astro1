@@ -68,7 +68,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const { id } = await params;
 
         const form = new IncomingForm({ keepExtensions: true, multiples: false });
-
         const nodeReq = Readable.fromWeb(req.body as any) as any;
         nodeReq.headers = Object.fromEntries(req.headers.entries());
         nodeReq.method = req.method;

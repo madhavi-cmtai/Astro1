@@ -92,7 +92,6 @@ const replaceMedia = async (
 
                 const decodedOldFilePath = decodeURIComponent(oldFilePath);
                 await bucket.file(decodedOldFilePath).delete();
-                console.log(" Old media deleted:", decodedOldFilePath);
             } catch (deleteErr: any) {
                 console.warn(" Failed to delete old media:", deleteErr.message);
             }
@@ -132,8 +131,6 @@ const deleteMedia = async (mediaUrl: string) => {
             return; 
         }
 
-        console.log(" Deleting from Firebase:", filePath);
-
         const [exists] = await bucket.file(filePath).exists();
         if (!exists) {
             console.warn("File not found in Firebase Storage:", filePath);
@@ -141,8 +138,6 @@ const deleteMedia = async (mediaUrl: string) => {
         }
 
         await bucket.file(filePath).delete();
-        console.log(" Deleted media from Firebase Storage:", filePath);
-
     } catch (error: any) {
         console.warn("⚠️ Failed to delete media:", error.message);
         

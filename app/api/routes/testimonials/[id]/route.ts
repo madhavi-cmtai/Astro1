@@ -42,7 +42,6 @@ const parseForm = async (req: Request) => {
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
-        console.log("Incoming ID:", id);
         const existing = await TestimonialService.getTestimonialById(id);
 
         if (!existing) {

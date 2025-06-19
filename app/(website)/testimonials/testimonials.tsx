@@ -1,19 +1,16 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import { motion, useAnimation } from "framer-motion";
-
-interface Testimonial {
-    id: string;
-    name: string;
-    description: string;
-    media?: string;
-    mediaType?: "image" | "video" | "none";
-    spread?: string;
-    rating: number;
-}
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch } from "@/lib/redux/store";
+import {
+    fetchTestimonials,
+    selectTestimonials,
+    selectLoading,
+} from "@/lib/redux/features/testimonialSlice";
 
 const transformationStories = [
     {
@@ -49,30 +46,17 @@ const renderStars = (count: number) => {
 };
 
 const Testimonials = () => {
-    const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch<AppDispatch>();
+    const testimonials = useSelector(selectTestimonials);
+    const loading = useSelector(selectLoading);
 
     const controls = useAnimation();
     const carouselRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
 
     useEffect(() => {
-        const fetchTestimonials = async () => {
-            try {
-                const res = await fetch("/api/routes/testimonials");
-                const result = await res.json();
-                if (result?.data) {
-                    setTestimonials(result.data);
-                }
-            } catch (error) {
-                console.error("Error fetching testimonials:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTestimonials();
-    }, []);
+        dispatch(fetchTestimonials());
+    }, [dispatch]);
 
     useEffect(() => {
         if (carouselRef.current) {
@@ -80,7 +64,7 @@ const Testimonials = () => {
             const visibleWidth = carouselRef.current.offsetWidth;
             setWidth(totalWidth - visibleWidth);
         }
-    }, []);
+    }, [testimonials]);
 
     useEffect(() => {
         controls.start({
@@ -98,7 +82,6 @@ const Testimonials = () => {
 
     return (
         <div className="min-h-screen bg-white" style={{ fontFamily: "var(--font-main)" }}>
-            {/* Hero Section */}
             <div className="relative min-h-[340px] md:min-h-[420px] flex flex-col items-center justify-center text-white text-center overflow-hidden mb-12">
                 <div className="absolute inset-0 bg-[url('/images/testimonial-banner.jpg')] bg-cover bg-center bg-no-repeat" />
                 <div className="absolute inset-0 bg-black/50" />
@@ -112,7 +95,6 @@ const Testimonials = () => {
                 </div>
             </div>
 
-            {/* Testimonials Section */}
             <h1 className="text-3xl font-bold text-center text-[var(--primary-red)] mb-10">🌟 Testimonials</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-14 max-w-7xl mx-auto px-4">
                 {loading ? (
@@ -125,18 +107,15 @@ const Testimonials = () => {
                             key={t.id}
                             className="bg-white rounded-2xl shadow-[0_4px_12px_0_var(--primary-green)] border border-[var(--primary-green)] overflow-hidden hover:shadow-xl transition duration-300 flex flex-col"
                         >
-                            {/* --- VIDEO CARD --- */}
-                            {t.mediaType === "video" && t.media ? (
+                            {t.mediaType === "video" && t.media && (
                                 <>
                                     <video controls src={t.media} className="w-full h-60 object-cover" />
                                     <div className="p-4">
                                         <h2 className="text-xl font-bold text-[var(--primary-red)]">{t.name}</h2>
                                     </div>
                                 </>
-                            ) : null}
-
-                            {/* --- IMAGE CARD --- */}
-                            {t.mediaType === "image" && t.media ? (
+                            )}
+                            {t.mediaType === "image" && t.media && (
                                 <>
                                     <Image
                                         src={t.media}
@@ -151,17 +130,13 @@ const Testimonials = () => {
                                         <p className="text-sm text-gray-600 line-clamp-3">{t.description}</p>
                                     </div>
                                 </>
-                            ) : null}
-
-                            {/* --- NO MEDIA CARD --- */}
+                            )}
                             {(!t.mediaType || t.mediaType === "none" || !t.media) && (
                                 <div className="p-5 flex flex-col gap-2 bg-white min-h-[280px] justify-center">
                                     <h2 className="text-xl font-semibold text-[var(--primary-red)]">{t.name}</h2>
                                     <div className="text-yellow-500 text-sm mt-1 flex gap-1">{renderStars(t.rating)}</div>
-                                    {t.spread && (
-                                        <p className="text-xs italic text-purple-500 font-medium mt-1">Spread: {t.spread}</p>
-                                    )}
-                                    <p className="text-sm text-gray-700  line-clamp-4 mt-5">{t.description}</p>
+                                    {t.spread && <p className="text-xs italic text-purple-500 font-medium mt-1">Spread: {t.spread}</p>}
+                                    <p className="text-sm text-gray-700 line-clamp-4 mt-5">{t.description}</p>
                                 </div>
                             )}
                         </div>
@@ -169,18 +144,13 @@ const Testimonials = () => {
                 )}
             </div>
 
-            {/* Transformation Stories Section (animated) */}
             <div className="mt-24 bg-gradient-to-b from-white to-gray-100 py-16 px-4 md:px-10">
                 <h2 className="text-3xl md:text-4xl font-extrabold text-center text-[var(--primary-red)] mb-12">
                     🌟 How Tarot Changed Their Path
                 </h2>
 
                 <div className="relative w-full overflow-hidden max-w-7xl mx-auto">
-                    <motion.div
-                        ref={carouselRef}
-                        animate={controls}
-                        className="flex gap-6"
-                    >
+                    <motion.div ref={carouselRef} animate={controls} className="flex gap-6">
                         {[...transformationStories, ...transformationStories].map((story, index) => (
                             <div
                                 key={`${story.id}-${index}`}
