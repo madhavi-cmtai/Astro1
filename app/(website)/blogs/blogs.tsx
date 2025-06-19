@@ -3,17 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useDispatch } from "react-redux";
 import { toast } from "sonner";
-
-interface Blog {
-  id: string;
-  title: string;
-  description: string;
-  media: {
-    type: "image";
-    url: string;
-  };
-}
+import { titleToSlug } from "@/lib/redux/features/blogSlice";
+import { AppDispatch } from "@/lib/redux/store";
+import { Blog, fetchBlogByTitle } from "@/lib/redux/features/blogSlice";
 
 interface PopularPost {
   id: string;
@@ -23,6 +17,7 @@ interface PopularPost {
 }
 
 export default function BlogList() {
+  const dispatch = useDispatch<AppDispatch>();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [popularPosts, setPopularPosts] = useState<PopularPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,11 +33,8 @@ export default function BlogList() {
         const normalizedBlogs: Blog[] = result.data.map((item: any) => ({
           id: item.id,
           title: Array.isArray(item.title) ? item.title[0] : item.title,
-          description: Array.isArray(item.summary) ? item.summary[0] : item.summary,
-          media: {
-            type: "image",
-            url: item.image || "",
-          },
+          summary: Array.isArray(item.summary) ? item.summary[0] : item.summary,
+          image: item.image || "",
         }));
 
         setBlogs(normalizedBlogs);
@@ -125,42 +117,40 @@ export default function BlogList() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogs
-              .filter((blog) => blog?.id && blog?.title)
-              .map((blog) => (
-                <Link
-                  key={blog.id}
-                  href={`/blogs/${blog.id}`} // ✅ Correct route to [id]/page.tsx
-                  className="rounded-xl shadow-md overflow-hidden bg-white border border-gray-100 hover:shadow-lg transition group block"
-                  style={{ boxShadow: "0 4px 10px var(--primary-green)" }}
-                >
-                  <div className="relative w-full h-48">
-                    {blog.media?.url ? (
-                      <Image
-                        src={blog.media.url}
-                        alt={blog.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
-                        No Image Available
-                      </div>
-                    )}
-                  </div>
+            {blogs.map((blog) => (
+              <Link
+                key={blog.id}
+                href={`/blogs/${titleToSlug(blog.title)}`}
+                className="rounded-xl shadow-md overflow-hidden bg-white border border-gray-100 hover:shadow-lg transition group block"
+                style={{ boxShadow: "0 4px 10px var(--primary-green)" }}
+              >
+                <div className="relative w-full h-48">
+                  {blog.image ? (
+                    <Image
+                      src={blog.image}
+                      alt={blog.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
+                      No Image Available
+                    </div>
+                  )}
+                </div>
 
-                  <div className="p-4">
-                    <h2 className="text-xl font-bold text-[var(--primary-red)] group-hover:text-[var(--primary-red-dark)] transition">
-                      {blog.title}
-                    </h2>
-                    <p className="text-sm mt-2 text-gray-600 line-clamp-2">{blog.description}</p>
-                    <span className="text-[#73CDA7] font-semibold mt-3 inline-block group-hover:underline transition">
-                      Read More →
-                    </span>
-                  </div>
-                </Link>
-              ))}
+                <div className="p-4">
+                  <h2 className="text-xl font-bold text-[var(--primary-red)] group-hover:text-[var(--primary-red-dark)] transition">
+                    {blog.title}
+                  </h2>
+                  <p className="text-sm mt-2 text-gray-600 line-clamp-2">{blog.summary}</p>
+                  <span className="text-[#73CDA7] font-semibold mt-3 inline-block group-hover:underline transition">
+                    Read More →
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </section>
@@ -170,36 +160,34 @@ export default function BlogList() {
         <h2 className="text-3xl font-bold text-center text-[var(--primary-red)] mb-10">🔥 Popular Posts</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {popularPosts
-            .filter((post) => post?.id && post?.title)
-            .map((post) => (
-              <Link
-                key={post.id}
-                href={`/blogs/${post.id}`} // ✅ Route to dynamic [id] page
-                className="rounded-xl shadow-md overflow-hidden bg-white border border-gray-100 hover:shadow-lg transition group block"
-                style={{ boxShadow: "0 4px 10px var(--primary-green)" }}
-              >
-                <div className="relative w-full h-48">
-                  <Image
-                    src={post.imageUrl}
-                    alt={post.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                </div>
+          {popularPosts.map((post) => (
+            <Link
+              key={post.id}
+              href={`/blogs/${titleToSlug(post.title)}`}
+              className="rounded-xl shadow-md overflow-hidden bg-white border border-gray-100 hover:shadow-lg transition group block"
+              style={{ boxShadow: "0 4px 10px var(--primary-green)" }}
+            >
+              <div className="relative w-full h-48">
+                <Image
+                  src={post.imageUrl}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              </div>
 
-                <div className="p-4">
-                  <h2 className="text-xl font-bold text-[var(--primary-red)] group-hover:text-[var(--primary-red-dark)] transition">
-                    {post.title}
-                  </h2>
-                  <p className="text-sm mt-2 text-gray-600 line-clamp-2">{post.excerpt}</p>
-                  <span className="text-[#73CDA7] font-semibold mt-3 inline-block group-hover:underline transition">
-                    Read More →
-                  </span>
-                </div>
-              </Link>
-            ))}
+              <div className="p-4">
+                <h2 className="text-xl font-bold text-[var(--primary-red)] group-hover:text-[var(--primary-red-dark)] transition">
+                  {post.title}
+                </h2>
+                <p className="text-sm mt-2 text-gray-600 line-clamp-2">{post.excerpt}</p>
+                <span className="text-[#73CDA7] font-semibold mt-3 inline-block group-hover:underline transition">
+                  Read More →
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
     </div>

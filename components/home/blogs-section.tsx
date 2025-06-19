@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/lib/redux/store";
 import { fetchBlogs, selectBlogs, selectLoading } from "@/lib/redux/features/blogSlice";
+import { titleToSlug } from "@/lib/redux/features/blogSlice";
 import { FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -75,11 +76,12 @@ const BlogsSection = () => {
                                         <h3 className="text-lg font-bold text-[var(--primary-red)] group-hover:text-black transition-colors duration-300 mb-1">
                                     {blog.title}</h3>
                                         <p className="text-sm text-gray-700 mb-3 line-clamp-3">{blog.summary}</p>
-                                        <Link href={`/blogs`}>
+                                        <Link href={`/blogs/${titleToSlug(blog.title)}`}>
                                             <span className="text-[#73CDA7] font-semibold mt-3 inline-block group-hover:underline transition">
                                                 Read More →
                                             </span>
                                         </Link>
+
                                     </div>
                                 </div>
                             ))}

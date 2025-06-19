@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/lib/redux/store";
 import {
-    fetchBlogById,
+    fetchBlogByTitle,
     selectBlog,
     selectLoading,
     selectError,
 } from "@/lib/redux/features/blogSlice";
-import { AppDispatch } from "@/lib/redux/store";
-import { useParams, useRouter } from "next/navigation";
 
 export default function BlogDetailPage() {
-    const { id } = useParams();
+    const { id } = useParams(); 
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
 
@@ -22,7 +22,7 @@ export default function BlogDetailPage() {
 
     useEffect(() => {
         if (id && typeof id === "string") {
-            dispatch(fetchBlogById(id));
+            dispatch(fetchBlogByTitle(id));
         }
     }, [dispatch, id]);
 
@@ -31,7 +31,9 @@ export default function BlogDetailPage() {
     };
 
     if (loading) {
-        return <p className="text-center py-10 text-gray-600">Loading blog...</p>;
+        return (
+            <p className="text-center py-10 text-gray-600">Loading blog...</p>
+        );
     }
 
     if (error || !blog) {
@@ -59,7 +61,9 @@ export default function BlogDetailPage() {
                 ← Back to Blogs
             </button>
 
-            <h1 className="text-4xl font-bold mb-4 text-[var(--primary-red)]">{blog.title}</h1>
+            <h1 className="text-4xl font-bold mb-4 text-[var(--primary-red)]">
+                {blog.title}
+            </h1>
 
             {blog.image && (
                 <img

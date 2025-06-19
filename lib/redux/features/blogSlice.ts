@@ -7,6 +7,7 @@ export interface Blog {
   title: string;
   summary: string;
   image: string;
+  slug?: string;
   createdOn?: string;
   updatedOn?: string;
   file?: File;
@@ -14,7 +15,7 @@ export interface Blog {
 
 export interface BlogState {
   data: Blog[];
-  selectedBlog: Blog | null; 
+  selectedBlog: Blog | null;
   loading: boolean;
   error: string | null;
 }
@@ -58,7 +59,7 @@ export const {
 } = blogSlice.actions;
 
 
-
+// Fetch all blogs
 export const fetchBlogs = () => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
@@ -69,7 +70,11 @@ export const fetchBlogs = () => async (dispatch: Dispatch) => {
   }
 };
 
-export const fetchBlogById = (id: string) => async (dispatch: Dispatch) => {
+export const titleToSlug = (title: string) =>
+  encodeURIComponent(title.toLowerCase().replace(/\s+/g, "-"));
+
+// ✅ Fetch blog by title
+export const fetchBlogByTitle = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const res = await axios.get(`/api/routes/blogs/${id}`);
@@ -78,6 +83,7 @@ export const fetchBlogById = (id: string) => async (dispatch: Dispatch) => {
     dispatch(setError(err?.message || "Failed to fetch blog"));
   }
 };
+
 
 export const addBlog = (formData: FormData) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
@@ -119,7 +125,7 @@ export const deleteBlog = (id: string) => async (dispatch: Dispatch) => {
   }
 };
 
-
+// Selectors
 export const selectBlogs = (state: RootState) => state.blog.data;
 export const selectBlog = (state: RootState) => state.blog.selectedBlog;
 export const selectLoading = (state: RootState) => state.blog.loading;

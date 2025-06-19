@@ -13,17 +13,26 @@ export const config = {
 };
 
 // GET
-export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
-        const blog = await BlogService.getBlogById(id);
+        const rawTitle = id;
+
+        // Normalize the slug to a title string
+        const decodedTitle = decodeURIComponent(rawTitle)
+            .toLowerCase()
+            .replace(/-/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const blog = await BlogService.getBlogByTitle(decodedTitle);
 
         if (!blog) {
             return NextResponse.json(
                 {
                     statusCode: 404,
                     errorCode: "NOT_FOUND",
-                    errorMessage: "Blog not found",
+                    errorMessage: "Blog not found by title",
                 },
                 { status: 404 }
             );
@@ -52,6 +61,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     }
 }
 
+
 // PUT
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -70,7 +80,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             });
         });
 
-        const { title, summary } = fields;
+        const title = Array.isArray(fields.title) ? fields.title[0] : fields.title;
+        const summary = Array.isArray(fields.summary) ? fields.summary[0] : fields.summary;
+
 
         const existingBlog = await BlogService.getBlogById(id);
         if (!existingBlog) {
@@ -100,8 +112,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const updatedBlog = await BlogService.updateBlog(id, {
             title,
             summary,
+            titleLower: (title || "").toLowerCase().replace(/\s+/g, " ").trim(),
             ...(imageUrl && { image: imageUrl }),
         });
+        
 
         return NextResponse.json(
             {

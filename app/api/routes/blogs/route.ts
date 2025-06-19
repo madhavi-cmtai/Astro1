@@ -77,59 +77,46 @@ export async function GET(request: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        console.log("Received POST request");
-
         const form = new IncomingForm({ keepExtensions: true, multiples: false });
-
         const nodeReq = Readable.fromWeb(req.body as any) as any;
         nodeReq.headers = Object.fromEntries(req.headers.entries());
         nodeReq.method = req.method;
-
-        console.log("Parsing form data...");
         const data = await new Promise<{ fields: any; files: any }>((resolve, reject) => {
             form.parse(nodeReq, (err, fields, files) => {
                 if (err) {
-                    console.log("Error parsing form:", err);
+                    
                     reject(err);
-                } else {
-                    console.log("Parsed form data:", fields, files);
+                } else {         
                     resolve({ fields, files });
                 }
             });
         });
 
-        const { title, summary } = data.fields;
+        const title = Array.isArray(data.fields.title) ? data.fields.title[0] : data.fields.title;
+        const summary = Array.isArray(data.fields.summary) ? data.fields.summary[0] : data.fields.summary; 
         const image = Array.isArray(data.files.image) ? data.files.image[0] : data.files.image;
-
         if (!title || !summary || !image) {
-            console.log("Validation failed:", { title, summary, image });
+            
             return NextResponse.json(
                 { statusCode: 400, errorMessage: "Title, summary, and image are required" },
                 { status: 400 }
             );
         }
-
-        console.log("Uploading image...");
         const imageStream = fs.createReadStream(image.filepath);
         const imageUrl = await UploadImage(imageStream, 800, 600);
 
         if (!imageUrl) {
-            console.log("Image upload failed");
             throw new Error("Image upload returned no URL");
         }
-
-        console.log("Image uploaded:", imageUrl);
 
         const newBlog = {
             title,
             summary,
             image: imageUrl,
+            titleLower: (title || "").toLowerCase().replace(/\s+/g, " ").trim(),
         };
-
-        console.log("Saving to Firestore:", newBlog);
+        
         const created = await BlogService.addBlog(newBlog);
-        console.log("Blog saved:", created);
-
         return NextResponse.json(
             {
                 statusCode: 201,
@@ -141,7 +128,6 @@ export async function POST(req: NextRequest) {
             { status: 201 }
         );
     } catch (error) {
-        console.error("Error in POST /api/routes/blogs:", error);
         return NextResponse.json(
             {
                 statusCode: 500,

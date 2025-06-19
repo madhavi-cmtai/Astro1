@@ -8,14 +8,12 @@ interface CacheEntry {
     etag: string;
 }
 
-
 class BlogService {
     static blogs: any[] = [];
     private static cache: CacheEntry | null = null;
     private static CACHE_TTL = 30000; // 30 seconds
-    private static readonly BATCH_SIZE = 10; 
+    private static readonly BATCH_SIZE = 10;
 
-    // Initialize cache if needed
     static async initBlogs() {
         if (!this.cache || this.isCacheStale()) {
             await this.refreshCache();
@@ -23,22 +21,18 @@ class BlogService {
         return this.cache?.data || [];
     }
 
-    // Check if cache is stale
     private static isCacheStale(): boolean {
         if (!this.cache) return true;
         return Date.now() - this.cache.timestamp > this.CACHE_TTL;
     }
 
-    // Refresh cache with pagination
     private static async refreshCache() {
         try {
-            const blogsRef = db.collection("blogs")
-                .orderBy("createdOn", "desc");
+            const blogsRef = db.collection("blogs").orderBy("createdOn", "desc");
 
             let allBlogs: any[] = [];
             let lastDoc = null;
-            
-            // Fetch data in batches
+
             do {
                 let query = blogsRef.limit(this.BATCH_SIZE);
                 if (lastDoc) {
@@ -48,32 +42,30 @@ class BlogService {
                 const snapshot = await query.get();
                 if (snapshot.empty) break;
 
-                const batchDocs = snapshot.docs.map(doc => ({
+                const batchDocs = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
-                    _cached: Date.now() // Add cache timestamp to each document
+                    _cached: Date.now(),
                 }));
-                
+
                 allBlogs = [...allBlogs, ...batchDocs];
                 lastDoc = snapshot.docs[snapshot.docs.length - 1];
-
             } while (lastDoc);
 
-            // Update cache with new data
             this.cache = {
                 data: allBlogs,
                 timestamp: Date.now(),
-                etag: `blogs-v1-${Date.now()}`
+                etag: `blogs-v1-${Date.now()}`,
             };
 
-            consoleManager.log(`✅ Blog cache refreshed with ${allBlogs.length} entries`);
+            this.blogs = allBlogs; // update in-memory cache
+            consoleManager.log(`Blog cache refreshed with ${allBlogs.length} entries`);
         } catch (error) {
-            consoleManager.error("❌ Error refreshing blog cache:", error);
+            consoleManager.error("Error refreshing blog cache:", error);
             throw new Error("Failed to refresh blogs cache");
         }
     }
 
-    // Get all blogs with optimized caching
     static async getAllBlogs(forceRefresh = false) {
         try {
             if (forceRefresh || this.isCacheStale()) {
@@ -81,93 +73,118 @@ class BlogService {
             }
             return this.cache?.data || [];
         } catch (error) {
-            consoleManager.error("❌ Error getting all blogs:", error);
+            consoleManager.error("Error getting all blogs:", error);
             throw new Error("Failed to fetch blogs");
         }
     }
 
-    // Add a new blog with createdOn timestamp
     static async addBlog(blogData: any) {
         try {
             const timestamp = admin.firestore.FieldValue.serverTimestamp();
+            const normalizedTitle = (blogData.title || "").toLowerCase().replace(/\s+/g, " ").trim();
+
             const newBlogRef = await db.collection("blogs").add({
                 ...blogData,
+                titleLower: normalizedTitle,
                 createdOn: timestamp,
+                updatedOn: timestamp,
             });
 
-            consoleManager.log("✅ New blog added with ID:", newBlogRef.id);
-
-            // Force refresh the cache after adding a new blog
+            consoleManager.log("New blog added with ID:", newBlogRef.id);
             await this.getAllBlogs(true);
 
-            return { id: newBlogRef.id, ...blogData, createdOn: timestamp };
+            return { id: newBlogRef.id, ...blogData, titleLower: normalizedTitle, createdOn: timestamp };
         } catch (error) {
-            consoleManager.error("❌ Error adding blog:", error);
+            consoleManager.error("Error adding blog:", error);
             throw new Error("Failed to add blog");
         }
     }
 
-    // Get blog by ID (fetches from cache first)
-    static async getBlogById(blogId: string) {
-        
+    static async getBlogByTitle(title: string) {
         try {
-            
-            const cachedBlog = this.blogs.find((b: any) => b.id === blogId);
+            const normalizedTitle = title.toLowerCase().replace(/\s+/g, " ").trim();
+
+            const cachedBlog = this.blogs.find((b: any) => {
+                const blogTitle = (b.title || "").toLowerCase().replace(/\s+/g, " ").trim();
+                return blogTitle === normalizedTitle;
+            });
+
             if (cachedBlog) {
-                consoleManager.log("✅ Blog fetched from cache:", blogId);
+                consoleManager.log("Blog fetched from cache by title:", cachedBlog.id);
                 return cachedBlog;
             }
 
-            const blogRef = db.collection("blogs").doc(blogId);
-            const doc = await blogRef.get();
+            const snapshot = await db
+                .collection("blogs")
+                .where("titleLower", "==", normalizedTitle)
+                .get();
 
-            if (!doc.exists) {
-                consoleManager.warn("⚠️ Blog not found:", blogId);
+            if (snapshot.empty) {
+                consoleManager.warn("No blog found with title:", title);
                 return null;
             }
 
-            consoleManager.log("✅ Blog fetched from Firestore:", blogId);
+            const doc = snapshot.docs[0];
+            consoleManager.log("Blog fetched from Firestore by title:", doc.id);
             return { id: doc.id, ...doc.data() };
         } catch (error) {
-            consoleManager.error("❌ Error fetching blog by ID:", error);
-            throw new Error("Failed to fetch blog");
+            consoleManager.error("Error fetching blog by title:", error);
+            throw new Error("Failed to fetch blog by title");
         }
     }
 
-    // Update blog with updatedOn timestamp
+    static async getBlogById(blogId: string) {
+        try {
+            const docRef = db.collection("blogs").doc(blogId);
+            const doc = await docRef.get();
+
+            if (!doc.exists) {
+                consoleManager.warn("No blog found with ID:", blogId);
+                return null;
+            }
+
+            return { id: doc.id, ...doc.data() };
+        } catch (error) {
+            consoleManager.error("Error fetching blog by ID:", error);
+            throw new Error("Failed to fetch blog by ID");
+        }
+    }
+    
+
     static async updateBlog(blogId: string, updatedData: any) {
         try {
             const timestamp = admin.firestore.FieldValue.serverTimestamp();
-            const blogRef = db.collection("blogs").doc(blogId);
-            await blogRef.update({
+            const updatePayload: any = {
                 ...updatedData,
                 updatedOn: timestamp,
-            });
+            };
 
-            consoleManager.log("✅ Blog updated:", blogId);
+            if (updatedData.title) {
+                updatePayload.titleLower = updatedData.title.toLowerCase().replace(/\s+/g, " ").trim();
+            }
 
-            // Force refresh the cache after updating a blog
+            const blogRef = db.collection("blogs").doc(blogId);
+            await blogRef.update(updatePayload);
+
+            consoleManager.log("Blog updated:", blogId);
             await this.getAllBlogs(true);
 
             return { id: blogId, ...updatedData, updatedOn: timestamp };
         } catch (error) {
-            consoleManager.error("❌ Error updating blog:", error);
+            consoleManager.error("Error updating blog:", error);
             throw new Error("Failed to update blog");
         }
     }
 
-    // Delete blog
     static async deleteBlog(blogId: string) {
         try {
             await db.collection("blogs").doc(blogId).delete();
-            consoleManager.log("✅ Blog deleted:", blogId);
-
-            // Force refresh the cache after deleting a blog
+            consoleManager.log("Blog deleted:", blogId);
             await this.getAllBlogs(true);
 
             return { success: true, message: "Blog deleted successfully" };
         } catch (error) {
-            consoleManager.error("❌ Error deleting blog:", error);
+            consoleManager.error("Error deleting blog:", error);
             throw new Error("Failed to delete blog");
         }
     }
