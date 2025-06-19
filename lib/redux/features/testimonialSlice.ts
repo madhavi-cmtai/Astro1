@@ -6,7 +6,7 @@ export interface Testimonial {
   name: string;
   description: string;
   media: string;
-  mediaType: "image" | "video" | "no-media" | null;
+  mediaType: "image" | "video" | null;
   spread: string;
   rating: number;
   status: "active" | "inactive";
@@ -53,30 +53,23 @@ export const fetchTestimonials = createAsyncThunk<Testimonial[], void, { rejectV
         headers: {
           'Cache-Control': 'max-age=30, stale-while-revalidate=60',
           'Pragma': 'no-cache',
-          'If-None-Match': '*',
+          'If-None-Match': '*', // Force revalidation
         },
-        next: { revalidate: 30 },
+        next: { revalidate: 30 }, // Next.js cache control
       });
 
-      // ✅ Updated logic: only parse JSON if status is not 304
+      // Handle 304 Not Modified
       if (res.status === 304 && testimonialState.items.length > 0) {
         return testimonialState.items;
       }
 
       if (!res.ok) {
-        // Use text fallback if response is not JSON
-        const text = await res.text();
-        try {
-          const errorData = JSON.parse(text);
-          throw new Error(errorData.message || "Failed to fetch testimonials");
-        } catch {
-          throw new Error(text || "Failed to fetch testimonials");
-        }
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to fetch testimonials");
       }
 
-      // ✅ Safe to parse JSON here
       const json = await res.json();
-
+      
       if (!json.data) {
         throw new Error("No testimonials data received");
       }
@@ -90,7 +83,6 @@ export const fetchTestimonials = createAsyncThunk<Testimonial[], void, { rejectV
     }
   }
 );
-
 
 // Add testimonial
 export const addTestimonial = createAsyncThunk<Testimonial, FormData>(

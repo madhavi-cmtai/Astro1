@@ -21,7 +21,7 @@ import {
   selectLoading,
   deleteTestimonial,
   addTestimonial,
-  updateTestimonial,
+  updateTestimonial
 } from "@/lib/redux/features/testimonialSlice";
 import { AppDispatch } from "@/lib/redux/store";
 

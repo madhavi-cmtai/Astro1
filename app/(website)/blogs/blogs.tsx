@@ -13,7 +13,6 @@ interface Blog {
     type: "image";
     url: string;
   };
-  slug: string;
 }
 
 interface PopularPost {
@@ -21,7 +20,6 @@ interface PopularPost {
   title: string;
   excerpt: string;
   imageUrl: string;
-  slug: string;
 }
 
 export default function BlogList() {
@@ -37,12 +35,10 @@ export default function BlogList() {
         if (!res.ok) throw new Error("Failed to fetch blogs");
 
         const result = await res.json();
-
         const normalizedBlogs: Blog[] = result.data.map((item: any) => ({
           id: item.id,
           title: Array.isArray(item.title) ? item.title[0] : item.title,
           description: Array.isArray(item.summary) ? item.summary[0] : item.summary,
-          slug: item.slug || item.id,
           media: {
             type: "image",
             url: item.image || "",
@@ -65,13 +61,11 @@ export default function BlogList() {
         if (!res.ok) throw new Error("Failed to fetch popular posts");
 
         const result = await res.json();
-
         const latest: PopularPost[] = result.data.slice(0, 6).map((item: any) => ({
           id: item.id,
           title: Array.isArray(item.title) ? item.title[0] : item.title,
           excerpt: Array.isArray(item.summary) ? item.summary[0] : item.summary,
           imageUrl: item.image || "/images/default.jpg",
-          slug: item.slug || item.id,
         }));
 
         setPopularPosts(latest);
@@ -132,11 +126,11 @@ export default function BlogList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {blogs
-              .filter((blog) => blog?.slug && blog?.title)
+              .filter((blog) => blog?.id && blog?.title)
               .map((blog) => (
                 <Link
                   key={blog.id}
-                  href={`/blogs/${blog.slug}`}
+                  href={`/blogs/${blog.id}`} // ✅ Correct route to [id]/page.tsx
                   className="rounded-xl shadow-md overflow-hidden bg-white border border-gray-100 hover:shadow-lg transition group block"
                   style={{ boxShadow: "0 4px 10px var(--primary-green)" }}
                 >
@@ -177,11 +171,11 @@ export default function BlogList() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {popularPosts
-            .filter((post) => post?.slug && post?.title)
+            .filter((post) => post?.id && post?.title)
             .map((post) => (
               <Link
                 key={post.id}
-                href={`/blogs/${post.slug}`}
+                href={`/blogs/${post.id}`} // ✅ Route to dynamic [id] page
                 className="rounded-xl shadow-md overflow-hidden bg-white border border-gray-100 hover:shadow-lg transition group block"
                 style={{ boxShadow: "0 4px 10px var(--primary-green)" }}
               >
