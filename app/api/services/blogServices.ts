@@ -7,6 +7,15 @@ interface CacheEntry {
     timestamp: number;
     etag: string;
 }
+interface Blog {
+    id: string;
+    title: string;
+    summary: string;
+    image?: string;
+    titleLower?: string;
+    createdOn?: any;
+    updatedOn?: any;
+}
 
 class BlogService {
     static blogs: any[] = [];

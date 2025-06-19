@@ -21,14 +21,14 @@ const Header = () => {
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50 border-b border-[#e3061320]">
-      <div className="container mx-auto px-4 flex items-center justify-between py-2 min-h-[56px]">
+      <div className="container mx-auto px-4 flex items-center justify-between py-2 min-h-[50px]">
         {/* Logo */}
         <Link href="/" className="inline-flex items-center">
-          <Image src="/logo.png" alt="logo" width={87} height={67} className="mr-2 rounded-md" />
+          <Image src="/logo.png" alt="logo" width={120} height={50} className="object-contain h-full w-auto rounded-md" />
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-5 items-center text-base font-bold" style={{ fontFamily: "var(--font-main)" }}>
+        <nav className="hidden md:flex gap-5 items-center text-[16.5px] font-bold" style={{ fontFamily: "var(--font-main)" }}>
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (

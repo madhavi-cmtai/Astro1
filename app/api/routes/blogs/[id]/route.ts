@@ -100,15 +100,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         let imageUrl: string | undefined;
 
         if (image && image.filepath) {
-            const replacedImage = await ReplaceImage(
-                fs.createReadStream(image.filepath),
-                existingBlog.image,
-                800,
-                600
-            );
+            let imageToReplace: string | undefined = undefined;
+
+            if (
+                typeof existingBlog === "object" &&
+                existingBlog !== null &&
+                "image" in existingBlog &&
+                typeof existingBlog.image === "string"
+            ) {
+                imageToReplace = existingBlog.image;
+            }
+
+            let replacedImage: string | undefined = undefined;
+            if (imageToReplace) {
+                replacedImage = await ReplaceImage(
+                    fs.createReadStream(image.filepath),
+                    imageToReplace,
+                    800,
+                    600
+                );
+            }
+
             imageUrl = replacedImage ?? undefined;
         }
-
+        
         const updatedBlog = await BlogService.updateBlog(id, {
             title,
             summary,
@@ -145,7 +160,13 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
     try {
         const { id } = await params;
 
-        const blog = await BlogService.getBlogById(id);
+        // Cast the blog to the expected Blog interface
+        const blog = await BlogService.getBlogById(id) as {
+            id: string;
+            image?: string;
+            [key: string]: any;
+        };
+
         if (!blog) {
             return NextResponse.json(
                 {
@@ -189,3 +210,4 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
         );
     }
 }
+

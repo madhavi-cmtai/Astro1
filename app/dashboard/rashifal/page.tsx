@@ -15,25 +15,35 @@ type Rashifal = {
 export default function RashifalDashboard() {
     const [rashifals, setRashifals] = useState<Rashifal[]>([]);
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const [savingId, setSavingId] = useState<string | null>(null);
     const [formData, setFormData] = useState<{ [id: string]: string }>({});
+    const [editMode, setEditMode] = useState<{ [id: string]: boolean }>({});
 
     useEffect(() => {
         const fetchRashifals = async () => {
             try {
                 const res = await axios.get("/api/routes/rashifal");
                 setRashifals(res.data);
+
                 const initialForm = res.data.reduce((acc: any, curr: Rashifal) => {
                     acc[curr.id] = curr.description || "";
                     return acc;
                 }, {});
+
+                const initialEdit = res.data.reduce((acc: any, curr: Rashifal) => {
+                    acc[curr.id] = false;
+                    return acc;
+                }, {});
+
                 setFormData(initialForm);
+                setEditMode(initialEdit);
             } catch (error) {
                 console.error("Failed to fetch rashifals", error);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchRashifals();
     }, []);
 
@@ -41,16 +51,22 @@ export default function RashifalDashboard() {
         setFormData((prev) => ({ ...prev, [id]: value }));
     };
 
+    const handleEdit = (id: string) => {
+        setEditMode((prev) => ({ ...prev, [id]: true }));
+    };
+
     const handleSave = async (id: string) => {
-        setSaving(true);
+        if (!editMode[id]) return; // Prevent saving if not in edit mode
+        setSavingId(id);
         try {
             await axios.put(`/api/routes/rashifal/${id}`, {
                 description: formData[id],
             });
+            setEditMode((prev) => ({ ...prev, [id]: false }));
         } catch (error) {
             console.error("Failed to update rashifal", error);
         } finally {
-            setSaving(false);
+            setSavingId(null);
         }
     };
 
@@ -66,7 +82,7 @@ export default function RashifalDashboard() {
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-6 text-center text-[var(--primary-red)]">
-                Rashifal 
+                Rashifal
             </h1>
             <div className="grid grid-cols-1 gap-6">
                 {rashifals.map((rashi) => (
@@ -80,15 +96,24 @@ export default function RashifalDashboard() {
                         <Textarea
                             className="w-full min-h-[120px] mb-4"
                             value={formData[rashi.id]}
+                            disabled={!editMode[rashi.id]}
                             onChange={(e) => handleChange(rashi.id, e.target.value)}
                         />
-                        <Button
-                            onClick={() => handleSave(rashi.id)}
-                            disabled={saving}
-                            className="bg-[var(--primary-red)] text-white hover:bg-green-700"
-                        >
-                            {saving ? "Saving..." : "Save Description"}
-                        </Button>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => handleEdit(rashi.id)}
+                                className="bg-[#1e201f] text-white hover:bg-[#585D59]"
+                            >
+                                Edit
+                            </Button>
+                            <Button
+                                onClick={() => handleSave(rashi.id)}
+                                disabled={!editMode[rashi.id] || savingId === rashi.id}
+                                className="bg-[var(--primary-red)] text-white hover:bg-red-700"
+                            >
+                                {savingId === rashi.id ? "Saving..." : "Save"}
+                            </Button>
+                        </div>
                     </div>
                 ))}
             </div>
