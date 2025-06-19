@@ -6,7 +6,7 @@ export interface Testimonial {
   name: string;
   description: string;
   media: string;
-  mediaType: "image" | "video" | null;
+  mediaType: "image" | "video" |"no-media" | null;
   spread: string;
   rating: number;
   status: "active" | "inactive";
