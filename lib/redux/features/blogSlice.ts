@@ -1,6 +1,7 @@
-import { createSlice, Dispatch } from "@reduxjs/toolkit";
+import { createSlice, Dispatch, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { RootState } from "../store";
+import { sanitize, RootState } from "../store";
+import { AppDispatch } from "../store";
 
 export interface Blog {
   id?: string;
@@ -31,22 +32,31 @@ const blogSlice = createSlice({
   name: "blog",
   initialState,
   reducers: {
-    setBlogs: (state, action) => {
+    setBlogs: (state, action: PayloadAction<Blog[]>) => {
       state.data = action.payload;
       state.loading = false;
       state.error = null;
     },
-    setSelectedBlog: (state, action) => {
+    setSelectedBlog: (state, action: PayloadAction<Blog>) => {
       state.selectedBlog = action.payload;
       state.loading = false;
       state.error = null;
     },
-    setLoading: (state, action) => {
+    setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    setError: (state, action) => {
+    setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload;
       state.loading = false;
+    },
+    updateBlogInState: (state, action: PayloadAction<{ id: string; blog: Partial<Blog> }>) => {
+      const index = state.data.findIndex((b) => b.id === action.payload.id);
+      if (index !== -1) {
+        state.data[index] = {
+          ...state.data[index],
+          ...action.payload.blog,
+        };
+      }
     },
   },
 });
@@ -56,8 +66,8 @@ export const {
   setLoading,
   setError,
   setSelectedBlog,
+  updateBlogInState,
 } = blogSlice.actions;
-
 
 // Fetch all blogs
 export const fetchBlogs = () => async (dispatch: Dispatch) => {
@@ -73,7 +83,7 @@ export const fetchBlogs = () => async (dispatch: Dispatch) => {
 export const titleToSlug = (title: string) =>
   encodeURIComponent(title.toLowerCase().replace(/\s+/g, "-"));
 
-// ✅ Fetch blog by title
+// Fetch blog by title
 export const fetchBlogByTitle = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
@@ -84,45 +94,66 @@ export const fetchBlogByTitle = (id: string) => async (dispatch: Dispatch) => {
   }
 };
 
-
-export const addBlog = (formData: FormData) => async (dispatch: Dispatch) => {
+export const addBlog = (formData: FormData) => async (dispatch: AppDispatch) => {
   dispatch(setLoading(true));
   try {
     await axios.post("/api/routes/blogs", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    await dispatch<any>(fetchBlogs());
+    await dispatch(fetchBlogs());
+    // no reload needed
   } catch (err: any) {
     dispatch(setError(err?.message || "Unknown error"));
+  } finally {
+    dispatch(setLoading(false));
   }
 };
 
-export const updateBlog = (blog: Blog, id: string) => async (dispatch: Dispatch) => {
-  dispatch(setLoading(true));
-  try {
-    const formData = new FormData();
-    formData.append("title", blog.title);
-    formData.append("summary", blog.summary);
-    if (blog.file) formData.append("image", blog.file);
+export const updateBlog = (blog: Blog, id: string) => {
+  return async (dispatch: AppDispatch) => {
+    dispatch(setLoading(true));
+    try {
+      const sanitized = sanitize({
+        title: blog.title,
+        summary: blog.summary,
+      });
 
-    await axios.put(`/api/routes/blogs/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+      const formData = new FormData();
+      formData.append("title", sanitized.title);
+      formData.append("summary", sanitized.summary);
+      if (blog.file) {
+        formData.append("image", blog.file);
+      }
 
-    await dispatch<any>(fetchBlogs());
-    window.location.reload();
-  } catch (err: any) {
-    dispatch(setError(err?.message || "Unknown error"));
-  }
+      const res = await axios.put(`/api/routes/blogs/${id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Directly update Redux state
+      dispatch(updateBlogInState({ id, blog: res.data.data }));
+
+      // Optional: fetchBlogs() if server may have other changes
+      // await dispatch(fetchBlogs());
+    } catch (err: any) {
+      dispatch(setError(err?.message || "Unknown error"));
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
 };
 
-export const deleteBlog = (id: string) => async (dispatch: Dispatch) => {
+export const deleteBlog = (id: string) => async (dispatch: AppDispatch) => {
   dispatch(setLoading(true));
   try {
     await axios.delete(`/api/routes/blogs/${id}`);
-    await dispatch<any>(fetchBlogs());
+    await dispatch(fetchBlogs());
+    // no reload needed
   } catch (err: any) {
     dispatch(setError(err?.message || "Unknown error"));
+  } finally {
+    dispatch(setLoading(false));
   }
 };
 
