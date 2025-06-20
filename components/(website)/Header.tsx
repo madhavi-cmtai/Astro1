@@ -24,7 +24,7 @@ const Header = () => {
       <div className="container mx-auto px-4 flex items-center justify-between py-2 min-h-[50px]">
         {/* Logo */}
         <Link href="/" className="inline-flex items-center">
-          <Image src="/logo.png" alt="logo" width={120} height={56} className="object-contain h-full w-auto rounded-md" />
+          <Image src="/logo.png" alt="logo" width={115} height={56} className="object-contain h-full w-auto rounded-md" />
         </Link>
 
         {/* Desktop Nav */}
