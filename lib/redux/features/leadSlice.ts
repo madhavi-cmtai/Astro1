@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { RootState } from "../store";
+import { sanitize, RootState } from "../store";
 
 
 
@@ -99,12 +99,6 @@ export const addLead = createAsyncThunk<
     }
   }
 );
-
-function sanitize<T extends object>(obj: T): T {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([_, v]) => v !== undefined)
-  ) as T;
-}
 
 export const updateLead = createAsyncThunk<LeadWithId, { id: string; updatedLeadData: Lead }, { rejectValue: string }>(
   'lead/updateLead',

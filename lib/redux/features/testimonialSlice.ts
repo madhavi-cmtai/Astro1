@@ -109,6 +109,7 @@ export const addTestimonial = (formData: FormData) => async (dispatch: Dispatch)
   try {
     const res = await axios.post("/api/routes/testimonials", formData);
     dispatch(addTestimonialToList(res.data.data));
+    window.location.reload();
     return res.data.data;
   } catch (error: any) {
     dispatch(setError(error?.response?.data?.message || error.message || "Failed to add testimonial"));
@@ -132,6 +133,7 @@ export const deleteTestimonial = (id: string) => async (dispatch: Dispatch) => {
   try {
     const res = await axios.delete(`/api/routes/testimonials/${id}`);
     dispatch(removeTestimonial(id));
+    window.location.reload();
     return res.data.data;
   } catch (error: any) {
     dispatch(setError(error?.response?.data?.message || error.message || "Failed to delete testimonial"));

@@ -109,6 +109,7 @@ export const addProduct = (product: FormData) => async (dispatch: Dispatch) => {
     });
     if (response.status === 200) {
       await dispatch(fetchProducts() as any);
+      window.location.reload();
       return response.data;
     } else {
       dispatch(setError(response.data.message));
@@ -150,6 +151,7 @@ export const deleteProduct = ({ id }: { id: string }) => async (dispatch: Dispat
     const response = await axios.delete(`/api/routes/products/${id}`);
     if (response.status === 200) {
       await dispatch(fetchProducts() as any);
+      window.location.reload();
       return response.data;
     } else {
       dispatch(setError(response.data.message));

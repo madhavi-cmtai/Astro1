@@ -19,6 +19,11 @@ export const store = configureStore({
   },
 });
 
+export function sanitize<T extends object>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  ) as T;
+}
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
 
