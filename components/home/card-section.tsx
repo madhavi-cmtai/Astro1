@@ -11,6 +11,17 @@ type Rashifal = {
     description: string;
 };
 
+const rashiOrder = [
+    "Mesh (Aries)", "Vrishabh (Taurus)", "Mithun (Gemini)", "Kark (Cancer)",
+    "Singh (Leo)", "Kanya (Virgo)", "Tula (Libra)", "Vrischik (Scorpio)",
+    "Dhanu (Sagittarius)", "Makar (Capricorn)", "Kumbh (Aquarius)", "Meen (Pisces)"
+];
+const rashiDates = [
+    "March 21–April 19", "April 20-May 20", "May 21-June 20", "June 21-July 22",
+    "July 23–August 22", "August 23–September 22", "September 23–October 22", "October 23–November 21",
+    "November 22–December 21", "December 22–January 19", "January 20–February 18", "February 19–March 20"
+  ];
+
 export default function TarotCardSection() {
     const [rashifals, setRashifals] = useState<Rashifal[]>([]);
     const [flippedCard, setFlippedCard] = useState<string | null>(null);
@@ -19,7 +30,14 @@ export default function TarotCardSection() {
         const fetchRashifals = async () => {
             try {
                 const res = await axios.get("/api/routes/rashifal");
-                setRashifals(res.data);
+
+                // ✅ Sort rashifals according to the custom rashiOrder
+                const sorted = [...res.data].sort(
+                    (a: Rashifal, b: Rashifal) =>
+                        rashiOrder.indexOf(a.title) - rashiOrder.indexOf(b.title)
+                );
+
+                setRashifals(sorted);
             } catch (error) {
                 console.error("Error fetching Rashifals:", error);
             }
@@ -53,14 +71,17 @@ export default function TarotCardSection() {
             {/* Cards */}
             <div className="px-4 sm:px-6 lg:px-8 w-full">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 max-w-7xl mx-auto mt-6">
-                    {rashifals.map((card) => (
+                    {rashifals.map((card, index) => (
                         <div
                             key={card.id}
                             className="w-71 h-99 perspective cursor-pointer"
-                            onClick={() => setFlippedCard((prev) => (prev === card.id ? null : card.id))}
+                            onClick={() =>
+                                setFlippedCard((prev) => (prev === card.id ? null : card.id))
+                            }
                         >
                             <div
-                                className={`relative w-full h-full transition-transform duration-700 ${flippedCard === card.id ? "rotate-y-180" : ""}`}
+                                className={`relative w-full h-full transition-transform duration-700 ${flippedCard === card.id ? "rotate-y-180" : ""
+                                    }`}
                                 style={{ transformStyle: "preserve-3d" }}
                             >
                                 {/* Front */}
@@ -80,8 +101,13 @@ export default function TarotCardSection() {
                                         backfaceVisibility: "hidden",
                                     }}
                                 >
-                                    <h3 className="text-2xl font-bold mb-2 text-[#f18a7f]">{card.title}</h3>
-                                    <p className="text-l text-justify text-gray-800 whitespace-pre-line">{card.description}</p>
+                                    <h3 className="text-2xl font-bold mb-1 text-[#f18a7f]">
+                                        {card.title}
+                                    </h3>
+                                    <p className="text-sm font-semibold mb-1 text-[#f18a7f]">{rashiDates[index]}</p>
+                                    <p className="text-l text-justify text-gray-800 whitespace-pre-line">
+                                        {card.description}
+                                    </p>
                                 </div>
                             </div>
                         </div>

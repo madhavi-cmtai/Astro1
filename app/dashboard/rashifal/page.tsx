@@ -12,6 +12,14 @@ type Rashifal = {
     description: string;
 };
 
+// Your exact custom Rashi order:
+const rashiOrder = [
+    "Mesh (Aries)", "Vrishabh (Taurus)", "Mithun (Gemini)", "Kark (Cancer)",
+    "Singh (Leo)", "Kanya (Virgo)", "Tula (Libra)", "Vrischik (Scorpio)",
+    "Dhanu (Sagittarius)", "Makar (Capricorn)", "Kumbh (Aquarius)", "Meen (Pisces)"
+
+];
+
 export default function RashifalDashboard() {
     const [rashifals, setRashifals] = useState<Rashifal[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,14 +31,20 @@ export default function RashifalDashboard() {
         const fetchRashifals = async () => {
             try {
                 const res = await axios.get("/api/routes/rashifal");
-                setRashifals(res.data);
 
-                const initialForm = res.data.reduce((acc: any, curr: Rashifal) => {
+                // Sort rashifals based on custom rashiOrder
+                const sorted = [...res.data].sort((a: Rashifal, b: Rashifal) => {
+                    return rashiOrder.indexOf(a.title) - rashiOrder.indexOf(b.title);
+                });
+
+                setRashifals(sorted);
+
+                const initialForm = sorted.reduce((acc: any, curr: Rashifal) => {
                     acc[curr.id] = curr.description || "";
                     return acc;
                 }, {});
 
-                const initialEdit = res.data.reduce((acc: any, curr: Rashifal) => {
+                const initialEdit = sorted.reduce((acc: any, curr: Rashifal) => {
                     acc[curr.id] = false;
                     return acc;
                 }, {});
@@ -56,7 +70,7 @@ export default function RashifalDashboard() {
     };
 
     const handleSave = async (id: string) => {
-        if (!editMode[id]) return; // Prevent saving if not in edit mode
+        if (!editMode[id]) return;
         setSavingId(id);
         try {
             await axios.put(`/api/routes/rashifal/${id}`, {
