@@ -81,29 +81,27 @@ export async function POST(req: NextRequest) {
         const nodeReq = Readable.fromWeb(req.body as any) as any;
         nodeReq.headers = Object.fromEntries(req.headers.entries());
         nodeReq.method = req.method;
-        const data = await new Promise<{ fields: any; files: any }>((resolve, reject) => {
+
+        const { fields, files } = await new Promise<{ fields: any; files: any }>((resolve, reject) => {
             form.parse(nodeReq, (err, fields, files) => {
-                if (err) {
-                    
-                    reject(err);
-                } else {         
-                    resolve({ fields, files });
-                }
+                if (err) reject(err);
+                else resolve({ fields, files });
             });
         });
 
-        const title = Array.isArray(data.fields.title) ? data.fields.title[0] : data.fields.title;
-        const summary = Array.isArray(data.fields.summary) ? data.fields.summary[0] : data.fields.summary; 
-        const image = Array.isArray(data.files.image) ? data.files.image[0] : data.files.image;
-        if (!title || !summary || !image) {
-            
+        const title = Array.isArray(fields.title) ? fields.title[0] : fields.title;
+        const summary = Array.isArray(fields.summary) ? fields.summary[0] : fields.summary;
+        const image = Array.isArray(files.image) ? files.image[0] : files.image;
+
+        if (!title || !summary || !image || !image.filepath) {
             return NextResponse.json(
                 { statusCode: 400, errorMessage: "Title, summary, and image are required" },
                 { status: 400 }
             );
         }
+
         const imageStream = fs.createReadStream(image.filepath);
-        const imageUrl = await UploadImage(imageStream, 800, 600);
+        const imageUrl = await UploadImage(imageStream, 400, 600);
 
         if (!imageUrl) {
             throw new Error("Image upload returned no URL");
@@ -113,9 +111,9 @@ export async function POST(req: NextRequest) {
             title,
             summary,
             image: imageUrl,
-            titleLower: (title || "").toLowerCase().replace(/\s+/g, " ").trim(),
+            titleLower: title.toLowerCase().replace(/\s+/g, " ").trim(),
         };
-        
+
         const created = await BlogService.addBlog(newBlog);
         return NextResponse.json(
             {
@@ -127,15 +125,16 @@ export async function POST(req: NextRequest) {
             },
             { status: 201 }
         );
-    } catch (error) {
+    } catch (error: any) {
+        consoleManager.error("POST /api/blogs error:", error);
         return NextResponse.json(
             {
                 statusCode: 500,
                 errorCode: "INTERNAL_ERROR",
-                errorMessage: "Something went wrong",
+                errorMessage: error.message || "Something went wrong",
             },
             { status: 500 }
         );
     }
-}
+  }
   

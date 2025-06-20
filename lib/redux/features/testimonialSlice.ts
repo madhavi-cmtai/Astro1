@@ -120,6 +120,7 @@ export const updateTestimonial = (formData: FormData, id: string) => async (disp
   try {
     const res = await axios.put(`/api/routes/testimonials/${id}`, formData);
     dispatch(updateTestimonialInList(res.data.data));
+    window.location.reload();
     return res.data.data;
   } catch (error: any) {
     dispatch(setError(error?.response?.data?.message || error.message || "Failed to update testimonial"));

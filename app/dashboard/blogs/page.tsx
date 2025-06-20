@@ -7,9 +7,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Loader2, Plus, Edit, Trash2, Search, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useSelector, useDispatch } from "react-redux";
-import { selectBlogs, selectError, selectLoading, updateBlog, deleteBlog as deleteBlogAction, addBlog, Blog, fetchBlogs } from "@/lib/redux/features/blogSlice";
+import {
+    selectBlogs,
+    selectError,
+    selectLoading,
+    updateBlog,
+    deleteBlog as deleteBlogAction,
+    addBlog,
+    Blog,
+    fetchBlogs
+} from "@/lib/redux/features/blogSlice";
 import { AppDispatch } from "@/lib/redux/store";
-
 
 export default function BlogsPage() {
     const dispatch = useDispatch<AppDispatch>();
@@ -43,7 +51,6 @@ export default function BlogsPage() {
             );
         });
     }, [blogs, search]);
-    
 
     const openAddModal = () => {
         setEditBlog(null);
@@ -90,30 +97,26 @@ export default function BlogsPage() {
 
         try {
             if (editBlog && editBlog.id) {
-                // === UPDATE EXISTING BLOG ===
                 await dispatch(updateBlog({
                     id: editBlog.id,
                     title: form.title,
                     summary: form.summary,
-                    image: editBlog.image, // Optional: you can skip this if backend regenerates URL
+                    image: editBlog.image,
                     file: imageFile || undefined,
                 }, editBlog.id));
                 toast.success("Blog updated!");
             } else {
-                // === ADD NEW BLOG ===
                 const formData = new FormData();
                 formData.append("title", form.title);
                 formData.append("summary", form.summary);
-                if (imageFile) {
-                    formData.append("image", imageFile);
-                }
+                if (imageFile) formData.append("image", imageFile);
 
                 await dispatch(addBlog(formData));
                 toast.success("Blog added!");
             }
 
             setModalOpen(false);
-            dispatch(fetchBlogs()); // Refresh blogs
+            dispatch(fetchBlogs());
         } catch (error) {
             console.error("Error submitting blog:", error);
             toast.error("Failed to save blog.");
@@ -123,19 +126,17 @@ export default function BlogsPage() {
             setImagePreview(null);
         }
     };
-      
-    
 
     return (
         <div className="mx-auto p-0 flex flex-col gap-8">
-            {/* Heading and Search */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2 mb-1 flex-wrap">
                 <h2 className="text-xl font-bold text-[#e63946]" style={{ fontFamily: 'var(--font-main)' }}>Blogs</h2>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center justify-end">
                     <div className="flex gap-2 w-full sm:w-auto">
                         <div className="relative w-full sm:w-72">
                             <Input
-                                placeholder="Search plans..."
+                                placeholder="Search Blogs..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="pl-10"
@@ -158,9 +159,7 @@ export default function BlogsPage() {
                 ) : (
                     filteredBlogs.map((blog) => (
                         <div key={blog.id} className="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col overflow-hidden"
-                            style={{
-                                boxShadow: "0 4px 12px var(--primary-green, rgba(0, 128, 0, 0.2))"
-                          }}>
+                            style={{ boxShadow: "0 4px 12px var(--primary-green, rgba(0, 128, 0, 0.2))" }}>
                             <div className="flex items-center justify-center h-32 bg-gray-100">
                                 {blog.image ? (
                                     <img src={blog.image} alt={blog.title} className="w-full h-32 object-cover rounded-lg" />
@@ -174,26 +173,11 @@ export default function BlogsPage() {
                                     <div className="text-sm text-gray-700 mb-2 line-clamp-2">{blog.summary}</div>
                                 </div>
                                 <div className="flex gap-2 mt-2">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => openEditModal(blog)}
-                                        aria-label="Edit"
-                                        className="cursor-pointer"
-                                    >
-                                        <Edit className="w-4 h-4 mr-1" />
-                                        Edit
+                                    <Button size="sm" variant="ghost" onClick={() => openEditModal(blog)} className="cursor-pointer">
+                                        <Edit className="w-4 h-4 mr-1" /> Edit
                                     </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => setDeleteBlog(blog)}
-                                        aria-label="Delete"
-                                        disabled={isDeleting}
-                                        className="text-destructive cursor-pointer"
-                                    >
-                                        <Trash2 className="w-4 h-4 mr-1" />
-                                        Delete
+                                    <Button size="sm" variant="ghost" onClick={() => setDeleteBlog(blog)} className="text-destructive cursor-pointer">
+                                        <Trash2 className="w-4 h-4 mr-1" /> Delete
                                     </Button>
                                 </div>
                             </div>
@@ -215,11 +199,13 @@ export default function BlogsPage() {
                             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                             required
                         />
-                        <Input
+                        <textarea
                             placeholder="Summary"
                             value={form.summary}
                             onChange={(e) => setForm((f) => ({ ...f, summary: e.target.value }))}
                             required
+                            rows={4}
+                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#525150]/30 resize-none"
                         />
                         <div className="flex flex-col gap-2">
                             <label className="block text-sm font-medium">Image</label>
@@ -240,9 +226,7 @@ export default function BlogsPage() {
                                 {editBlog ? "Update" : "Add"}
                             </Button>
                             <DialogClose asChild>
-                                <Button type="button" variant="ghost">
-                                    Cancel
-                                </Button>
+                                <Button type="button" variant="ghost">Cancel</Button>
                             </DialogClose>
                         </DialogFooter>
                     </form>
@@ -268,9 +252,7 @@ export default function BlogsPage() {
                             {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />} Delete
                         </Button>
                         <DialogClose asChild>
-                            <Button type="button" variant="ghost" disabled={isDeleting}>
-                                Cancel
-                            </Button>
+                            <Button type="button" variant="ghost" disabled={isDeleting}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

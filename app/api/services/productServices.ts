@@ -22,7 +22,7 @@ class ProductService {
     }
 
     // Get all products (Uses cache unless forceRefresh is true)
-    static async getAllProducts(forceRefresh = false) {
+    static async getAllProducts(forceRefresh = true) {
         if (forceRefresh || !this.isInitialized) {
             consoleManager.log("Force refreshing products from Firestore...");
             const snapshot = await db.collection("products").orderBy("createdOn", "desc").get();

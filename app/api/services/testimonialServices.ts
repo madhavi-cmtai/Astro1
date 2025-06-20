@@ -10,7 +10,7 @@ interface CacheEntry {
 
 class TestimonialService {
     private static cache: CacheEntry | null = null;
-    private static CACHE_TTL = 30000; // 30 seconds
+    private static CACHE_TTL = 3; // 3 miliseconds
     private static readonly BATCH_SIZE = 20;
 
     // Normalize mediaType
@@ -72,7 +72,7 @@ class TestimonialService {
         }
     }
 
-    static async getAllTestimonials(forceRefresh = false) {
+    static async getAllTestimonials(forceRefresh = true) {
         try {
             if (forceRefresh || this.isCacheStale()) {
                 await this.refreshCache();

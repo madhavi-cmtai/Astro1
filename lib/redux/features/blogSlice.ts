@@ -110,6 +110,7 @@ export const updateBlog = (blog: Blog, id: string) => async (dispatch: Dispatch)
     });
 
     await dispatch<any>(fetchBlogs());
+    window.location.reload();
   } catch (err: any) {
     dispatch(setError(err?.message || "Unknown error"));
   }

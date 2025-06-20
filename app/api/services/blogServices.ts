@@ -20,7 +20,7 @@ interface Blog {
 class BlogService {
     static blogs: any[] = [];
     private static cache: CacheEntry | null = null;
-    private static CACHE_TTL = 30000; // 30 seconds
+    private static CACHE_TTL = 3; 
     private static readonly BATCH_SIZE = 10;
 
     static async initBlogs() {
@@ -75,7 +75,7 @@ class BlogService {
         }
     }
 
-    static async getAllBlogs(forceRefresh = false) {
+    static async getAllBlogs(forceRefresh = true) {
         try {
             if (forceRefresh || this.isCacheStale()) {
                 await this.refreshCache();

@@ -34,11 +34,14 @@ const LeadsPage = () => {
 
     try {
       if (editLead) {
-        await dispatch(updateLead(editLead.id, {
-          ...form,
-          status: form.status as "New" | "Contacted" | "Converted",
-          createdOn: editLead.createdOn,
-          updatedOn: timestamp,
+        await dispatch(updateLead({
+          id: editLead.id,
+          updatedLeadData: {
+            ...form,
+            status: form.status as "New" | "Contacted" | "Converted",
+            createdOn: editLead.createdOn,
+            updatedOn: timestamp,
+          }
         }));
         toast.success("Lead updated!");
       } else {

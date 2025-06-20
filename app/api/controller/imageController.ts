@@ -97,23 +97,28 @@ const DeleteImage = async (imageUrl: string) => {
     if (!imageUrl) return;
 
     const bucket = adminStorage.bucket();
+    let filePath: string | undefined;
 
-    let filePath;
     if (imageUrl.includes("/o/")) {
-      filePath = imageUrl.split("/o/")[1].split("?")[0];
+      filePath = decodeURIComponent(imageUrl.split("/o/")[1].split("?")[0]);
     } else if (imageUrl.includes("storage.googleapis.com")) {
       const urlParts = imageUrl.split("storage.googleapis.com/")[1].split("?")[0];
       filePath = urlParts.split("/").slice(1).join("/");
+    } else if (imageUrl.includes("firebasestorage.app")) {
+      const url = new URL(imageUrl);
+      filePath = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
     } else {
       throw new Error("Invalid image URL format");
     }
 
-    const decodedFilePath = decodeURIComponent(filePath);
-    await bucket.file(decodedFilePath).delete();
+    if (!filePath) throw new Error("Unable to parse image path");
+    await bucket.file(filePath).delete();
+    console.log("Image deleted:", filePath);
   } catch (error: any) {
     console.warn("Failed to delete image from Firebase:", error.message);
     throw new Error("Image deletion error: " + error.message);
   }
 };
+
 
 export { UploadImage, ReplaceImage, DeleteImage };

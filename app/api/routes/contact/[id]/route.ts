@@ -23,11 +23,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     try {
         const { id } = await params;
         const body = await req.json();
-
-        await db.collection("contactMessages").doc(id).update({
+        await db.collection("contactMessages").doc(id).set({
             ...body,
             updatedOn: new Date().toISOString(),
-        });
+        }, { merge: true });
 
         return NextResponse.json({ message: "Message updated successfully" }, { status: 200 });
     } catch (error) {
@@ -36,7 +35,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 }
 
-    
 
 //  DELETE a specific contact message
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -1,23 +1,29 @@
-import { createSlice, Dispatch } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { RootState } from "../store";
 
-interface Lead {
+
+
+export interface Lead {
   id?: string;
   name: string;
   email: string;
   phone: string;
   message: string;
-  status?: string;
-  createdOn?: string;
-  updatedOn?: string;
+  status: "New" | "Contacted" | "Converted" ; 
+  createdOn: string;
+  updatedOn: string;
+}
+
+export interface LeadWithId extends Lead {
+  id: string;
 }
 
 interface LeadState {
-  data: Lead[];
+  data: LeadWithId[];
   loading: boolean;
   error: string | null;
-  selectedLead: Lead | null;
+  selectedLead: LeadWithId | null;
 }
 
 const initialState: LeadState = {
@@ -27,111 +33,230 @@ const initialState: LeadState = {
   selectedLead: null,
 };
 
+
+
+export const fetchLeads = createAsyncThunk<LeadWithId[], void, { rejectValue: string }>(
+  'lead/fetchLeads',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get("/api/routes/contact", {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!response.data?.success) {
+        return rejectWithValue('Failed to fetch leads: Server returned an unsuccessful response');
+      }
+      
+      if (!Array.isArray(response.data?.data)) {
+        console.error('Invalid leads data received:', response.data);
+        return rejectWithValue('Invalid leads data received from server');
+      }    
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error fetching leads:', error);
+      const message = error.response?.data?.message || error.message || "Failed to fetch leads";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchLeadById = createAsyncThunk<LeadWithId, string, { rejectValue: string }>(
+  'lead/fetchLeadById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`/api/routes/contact/${id}`);
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || `Failed to fetch lead with ID: ${id}`;
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const addLead = createAsyncThunk<
+  LeadWithId,
+  Omit<Lead, 'createdOn' | 'updatedOn'>,
+  { rejectValue: string }
+>(
+  'lead/addLead',
+  async (newLeadData, { rejectWithValue }) => {
+    try {
+      const timestamp = new Date().toISOString();
+      const leadToCreate: Lead = {
+        ...newLeadData,
+        createdOn: timestamp,
+        updatedOn: timestamp,
+      };
+      const response = await axios.post("/api/routes/contact", leadToCreate);
+      return response.data.data;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || error.message || "Failed to add lead";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+function sanitize<T extends object>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  ) as T;
+}
+
+export const updateLead = createAsyncThunk<LeadWithId, { id: string; updatedLeadData: Lead }, { rejectValue: string }>(
+  'lead/updateLead',
+  async ({ id, updatedLeadData }, { rejectWithValue, dispatch }) => {
+    try {
+      const sanitizedData = sanitize(updatedLeadData);
+      const response = await axios.put(`/api/routes/contact/${id}`, sanitizedData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      window.location.reload();
+      dispatch(fetchLeads());
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || `Failed to update lead with ID: ${id}`;
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const deleteLead = createAsyncThunk<string, string, { rejectValue: string }>(
+  'lead/deleteLead',
+  async (leadId, { rejectWithValue }) => {
+    try {
+      await axios.delete(`/api/routes/contact/${leadId}`);
+      return leadId;
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || `Failed to delete lead with ID: ${leadId}`;
+      return rejectWithValue(message);
+    }
+  }
+);
+
+
+
 const leadSlice = createSlice({
   name: "lead",
   initialState,
   reducers: {
-    setLeads: (state, action) => {
-      state.data = action.payload;
-      state.loading = false;
-      state.error = null;
-    },
-    setLoading: (state, action) => {
+    setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    setError: (state, action) => {
+    setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
       state.loading = false;
     },
-    setSelectedLead: (state, action) => {
+    setSelectedLead: (state, action: PayloadAction<LeadWithId | null>) => {
       state.selectedLead = action.payload;
     },
     clearSelectedLead: (state) => {
       state.selectedLead = null;
     },
   },
+  extraReducers: (builder) => {
+    builder
+
+     
+      .addCase(fetchLeads.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchLeads.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data = action.payload;
+      })
+      .addCase(fetchLeads.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Failed to fetch leads";
+      })
+
+      // --- Fetch Lead by ID ---
+      .addCase(fetchLeadById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchLeadById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedLead = action.payload;
+      })
+      .addCase(fetchLeadById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Failed to fetch lead by ID";
+      })
+
+      // --- Add Lead ---
+      .addCase(addLead.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addLead.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data.push(action.payload);
+      })
+      .addCase(addLead.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Failed to add lead";
+      })
+
+      // --- Update Lead ---
+      .addCase(updateLead.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateLead.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const updatedLead = action.payload;
+        if (!updatedLead || !updatedLead.id) {
+          state.error = "Invalid update payload";
+          return;
+        }
+
+        const index = state.data.findIndex((lead) => lead.id === updatedLead.id);
+        if (index !== -1) {
+          state.data[index] = updatedLead;
+        }
+      })
+      .addCase(updateLead.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Failed to update lead";
+      })
+
+      // --- Delete Lead ---
+      .addCase(deleteLead.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteLead.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data = state.data.filter(lead => lead.id !== action.payload);
+      })
+      .addCase(deleteLead.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Failed to delete lead";
+      });
+  },
 });
 
-export const { setLeads, setLoading, setError, setSelectedLead, clearSelectedLead } = leadSlice.actions;
 
-export const fetchLeads = () => async (dispatch: Dispatch) => {
-  try {
-    const response = await axios.get("/api/routes/contact");
-    if (response.status === 200) {
-      dispatch(setLeads(response.data.data));
-    } else {
-      dispatch(setError(response.data.message));
-    }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
-  }
-};
-
-export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
-  dispatch(setLoading(true));
-  try {
-    const response = await axios.get(`/api/routes/contact/${id}`);
-    const data: Lead = response.data;
-    if (response.status === 200) {
-      dispatch(setSelectedLead(data));
-    } else {
-      dispatch(setError(response.data.message));
-    }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
-  }
-};
-
-export const addLead = (lead: Lead) => async (dispatch: Dispatch) => {
-  dispatch(setLoading(true));
-  try {
-    const response = await axios.post("/api/routes/contact", lead);
-    if (response.status === 201) {
-      return response.data;
-    } else {
-      dispatch(setError(response.data.message));
-    }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
-  }
-};
-
-export const updateLead = (id: string, lead: Lead) => async (dispatch: Dispatch) => {
-  dispatch(setLoading(true));
-  try {
-    const response = await axios.put(`/api/routes/contact/${id}`, lead);
-    if (response.status === 200) {
-      return response.data;
-    } else {
-      dispatch(setError(response.data.message));
-    }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
-  }
-};
-
-export const deleteLead = (id: string) => async (dispatch: Dispatch) => {
-  dispatch(setLoading(true));
-  try {
-    const response = await axios.delete(`/api/routes/contact/${id}`);
-    if (response.status === 200) {
-      return response.data;
-    } else {
-      dispatch(setError(response.data.message));
-    }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
-  }
-};
+export const {
+  setLoading,
+  setError,
+  setSelectedLead,
+  clearSelectedLead
+} = leadSlice.actions;
 
 export const selectLeads = (state: RootState) => state.lead.data;
-export const selectLeadById = (state: RootState, id: string) => state.lead.data.find((lead: Lead) => lead.id === id);
 export const selectLoading = (state: RootState) => state.lead.loading;
 export const selectError = (state: RootState) => state.lead.error;
+export const selectSelectedLead = (state: RootState) => state.lead.selectedLead;
 
 export default leadSlice.reducer;

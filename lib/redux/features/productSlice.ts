@@ -130,6 +130,7 @@ export const updateProduct = ({ id, product }: { id: string; product: FormData }
     });
     if (response.status === 200) {
       await dispatch(fetchProducts() as any);
+      window.location.reload();
       return response.data;
     } else {
       dispatch(setError(response.data.message));
