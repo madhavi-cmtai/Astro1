@@ -219,23 +219,30 @@ const About = () => {
       {/* 🎥 Meet Shilpa: Soul Guide Videos */}
       
       <section className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-20">
-        <h2 className="text-5xl font-extrabold text-center mb-14 text-[var(--primary-red)]">
+        <h2 className="text-4xl md:text-5xl font-extrabold text-center mb-14 text-[var(--primary-red)]">
           Meet Shilpa: Soul Guide
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 justify-items-center">
           {/* Video 1 */}
-          <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-[0_4px_20px_0_var(--primary-green)]"
-            style={{ height: '550px', width: '500px' }}>
-            <video controls className="w-full h-full object-fill" preload="metadata">
+          <div className="w-full max-w-[500px] h-[550px] rounded-2xl overflow-hidden shadow-[0_4px_20px_0_var(--primary-green)]">
+            <video
+              controls
+              className="w-full h-full object-fill"
+              preload="metadata"
+            >
               <source src="/videos/about-video1.mp4" type="video/mp4" />
               Sorry, your browser doesn't support embedded videos.
             </video>
           </div>
 
           {/* Video 2 */}
-          <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-[0_4px_20px_0_var(--primary-green)]"
-            style={{ height: '550px', width: '500px' }}>
-            <video controls className="w-full h-full object-fill" preload="metadata">
+          <div className="w-full max-w-[500px] h-[550px] rounded-2xl overflow-hidden shadow-[0_4px_20px_0_var(--primary-green)]">
+            <video
+              controls
+              className="w-full h-full object-fill"
+              preload="metadata"
+            >
               <source src="/videos/about-video2.mp4" type="video/mp4" />
               Sorry, your browser doesn't support embedded videos.
             </video>

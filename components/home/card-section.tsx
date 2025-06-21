@@ -20,7 +20,7 @@ const rashiDates = [
     "March 21–April 19", "April 20-May 20", "May 21-June 20", "June 21-July 22",
     "July 23–August 22", "August 23–September 22", "September 23–October 22", "October 23–November 21",
     "November 22–December 21", "December 22–January 19", "January 20–February 18", "February 19–March 20"
-  ];
+];
 
 export default function TarotCardSection() {
     const [rashifals, setRashifals] = useState<Rashifal[]>([]);
@@ -31,7 +31,6 @@ export default function TarotCardSection() {
             try {
                 const res = await axios.get("/api/routes/rashifal");
 
-                // ✅ Sort rashifals according to the custom rashiOrder
                 const sorted = [...res.data].sort(
                     (a: Rashifal, b: Rashifal) =>
                         rashiOrder.indexOf(a.title) - rashiOrder.indexOf(b.title)
@@ -74,7 +73,7 @@ export default function TarotCardSection() {
                     {rashifals.map((card, index) => (
                         <div
                             key={card.id}
-                            className="w-71 h-99 perspective cursor-pointer"
+                            className="w-full max-w-xs h-[400px] sm:h-[420px] md:h-[450px] perspective cursor-pointer mx-auto"
                             onClick={() =>
                                 setFlippedCard((prev) => (prev === card.id ? null : card.id))
                             }
@@ -104,7 +103,9 @@ export default function TarotCardSection() {
                                     <h3 className="text-2xl font-bold mb-1 text-[#f18a7f]">
                                         {card.title}
                                     </h3>
-                                    <p className="text-sm font-semibold mb-1 text-[#f18a7f]">{rashiDates[index]}</p>
+                                    <p className="text-sm font-semibold mb-1 text-[#f18a7f]">
+                                        {rashiDates[index]}
+                                    </p>
                                     <p className="text-l text-justify text-gray-800 whitespace-pre-line">
                                         {card.description}
                                     </p>
