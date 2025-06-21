@@ -31,6 +31,7 @@ export default function TarotCardSection() {
             try {
                 const res = await axios.get("/api/routes/rashifal");
 
+                // ✅ Sort rashifals according to the custom rashiOrder
                 const sorted = [...res.data].sort(
                     (a: Rashifal, b: Rashifal) =>
                         rashiOrder.indexOf(a.title) - rashiOrder.indexOf(b.title)
@@ -73,7 +74,7 @@ export default function TarotCardSection() {
                     {rashifals.map((card, index) => (
                         <div
                             key={card.id}
-                            className="w-full max-w-xs h-[400px] sm:h-[420px] md:h-[450px] perspective cursor-pointer mx-auto"
+                            className="w-71 h-99 perspective cursor-pointer"
                             onClick={() =>
                                 setFlippedCard((prev) => (prev === card.id ? null : card.id))
                             }
@@ -103,9 +104,7 @@ export default function TarotCardSection() {
                                     <h3 className="text-2xl font-bold mb-1 text-[#f18a7f]">
                                         {card.title}
                                     </h3>
-                                    <p className="text-sm font-semibold mb-1 text-[#f18a7f]">
-                                        {rashiDates[index]}
-                                    </p>
+                                    <p className="text-sm font-semibold mb-1 text-[#f18a7f]">{rashiDates[index]}</p>
                                     <p className="text-l text-justify text-gray-800 whitespace-pre-line">
                                         {card.description}
                                     </p>
@@ -117,4 +116,4 @@ export default function TarotCardSection() {
             </div>
         </div>
     );
-}
+}  
